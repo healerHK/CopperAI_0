@@ -65,3 +65,46 @@ def help_view(request):
 
 def home(request):
     return render(request, 'base.html')
+#thanh this is a function that is used for uploading file, saving it temporarily, and saving the metadata after validation to geospatial datasets model. 
+@login_required
+def upload_file(request):
+    if request.method == 'POST':
+        form = GeospatialDatasetForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            file_instance = form.save(commit=False)
+
+            # Save file temporarily to disk
+            import tempfile
+            
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file.name) as temp_file:
+                for chunk in file.chunks():
+                    temp_file.write(chunk)
+                temp_path = temp_file.name
+
+            try:
+                #validation check
+                metadata = file_validation(temp_path)
+
+                
+                if metadata["dataset_types"] != form.cleaned_data["datasets_type"]:
+                    return JsonResponse({'error': 'File type does not match actual content.'}, status=400)
+
+            
+                file_instance.crs = metadata.get("crs")
+                file_instance.band_count = metadata.get("band_info")
+                file_instance.geometry_types = metadata.get("geometry_types")
+                file_instance.save()
+
+                return JsonResponse({'message': 'File uploaded and validated successfully.'})
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
+        
+    else:
+        form = GeospatialDatasetForm()
+
+    return render(request, 'upload.html', {'form': form})
+
+
+
