@@ -46,6 +46,7 @@ class geospatialDatasets(models.Model):
     file = models.FileField(upload_to=dataset_upload_path)
     crs = models.CharField(max_length=50, choices=crs_choices.choices, verbose_name="Coordinate reference system")  # Fixed: Use crs_choices.choices
     band_info = models.CharField(max_length=20, choices=band_types.choices, verbose_name="Band")  # Fixed: Use band_types.choices
+    geometry_types = models.CharField(max_length=128, null=True, blank=True)  # Only for vectors
 
     updated_on = models.DateTimeField(auto_now_add=True)
 
